@@ -9,10 +9,13 @@ from weaviate_provider.hooks.weaviate import WeaviateHook
 from airflow.operators.empty import EmptyOperator
 from airflow.models.baseoperator import chain
 import json
+from airflow.models.param import Param
+from include.movie_data.text_to_parquet_script import create_parquet_file_from_txt
 
 WEAVIATE_USER_CONN_ID = "weaviate_user"
 WEAVIATE_ADMIN_CONN_ID = "weaviate_admin"
 PARQUET_FILE_PATH = "include/movie_data/movie_data.parquet"
+TEXT_FILE_PATH = "include/movie_data/movie_data.txt"
 
 
 @dag(
@@ -20,6 +23,13 @@ PARQUET_FILE_PATH = "include/movie_data/movie_data.parquet"
     schedule=None,
     catchup=False,
     tags=["weaviate"],
+    params={
+        "movie_concepts": Param(
+            ["discovery", "friends"],
+            type="array",
+            description="What kind of movie do you want to watch today? Add one concept per line.",
+        )
+    },
 )
 def weaviate_tutorial():
     # check if the movie schema exists in the weaviate instance
@@ -52,6 +62,10 @@ def weaviate_tutorial():
 
     schema_exists = EmptyOperator(task_id="schema_exists")
 
+    @task
+    def create_parquet_file(text_file_path, parquet_file_path):
+        create_parquet_file_from_txt(text_file_path, parquet_file_path)
+
     @task.weaviate_import(
         weaviate_conn_id=WEAVIATE_ADMIN_CONN_ID, trigger_rule="none_failed"
     )
@@ -66,11 +80,12 @@ def weaviate_tutorial():
             "uuid_column": "movie_id",
         }
 
-    @task
-    def query_embeddings(weaviate_conn_id):
-        hook = WeaviateHook(weaviate_conn_id)
+    import_data_obj = import_data(class_name="Movie")
 
-        concepts = ["discovery"]
+    @task
+    def query_embeddings(weaviate_conn_id, **context):
+        hook = WeaviateHook(weaviate_conn_id)
+        movie_concepts = context["params"]["movie_concepts"]
 
         query = (
             """
@@ -78,7 +93,7 @@ def weaviate_tutorial():
                 Get {
                     Movie(nearText: {
                         concepts: """
-            + json.dumps(concepts)
+            + json.dumps(movie_concepts)
             + """,
                         distance: 0.75
                     }) {
@@ -97,16 +112,18 @@ def weaviate_tutorial():
 
         response = hook.run(query=query)
         top_result = response["data"]["Get"]["Movie"][0]
-        print(f"The top result for the concept(s) {concepts} is:")
+        print(f"The top result for the concept(s) {movie_concepts} is:")
         print(f"The movie {top_result['title']}, released in {top_result['year']}.")
         print(f"IMDB describes the movie as: {top_result['description']}")
 
     chain(
         branch_create_schema(check_schema.output),
         [create_schema, schema_exists],
-        import_data(class_name="Movie"),
+        import_data_obj,
         query_embeddings(WEAVIATE_USER_CONN_ID),
     )
+
+    chain(create_parquet_file(TEXT_FILE_PATH, PARQUET_FILE_PATH), import_data_obj)
 
 
 weaviate_tutorial()
