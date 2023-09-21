@@ -2,8 +2,8 @@ import pandas as pd
 import re
 from uuid import uuid4
 
-def create_parquet_file_from_txt(text_file_path, parquet_file_path):
 
+def create_parquet_file_from_txt(text_file_path, parquet_file_path):
     with open(text_file_path, "r") as f:
         lines = f.readlines()
 
@@ -16,9 +16,10 @@ def create_parquet_file_from_txt(text_file_path, parquet_file_path):
         try:
             title, year = match.groups()
             year = int(year)
+        # skip malformed lines
         except:
             num_skipped_lines += 1
-            continue  # skip this malformed lines
+            continue
 
         genre = parts[2].strip()
         description = parts[3].strip()
@@ -27,8 +28,9 @@ def create_parquet_file_from_txt(text_file_path, parquet_file_path):
 
         data.append((str(uuid4()), title, year, genre, description))
 
-    df = pd.DataFrame(data, columns=["movie_id", "title", "year", "genre", "description"])
-
+    df = pd.DataFrame(
+        data, columns=["movie_id", "title", "year", "genre", "description"]
+    )
 
     print(df.head())
     print(
@@ -37,4 +39,3 @@ def create_parquet_file_from_txt(text_file_path, parquet_file_path):
     )
 
     df.to_parquet(parquet_file_path, index=False)
-    

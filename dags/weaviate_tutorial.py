@@ -6,16 +6,18 @@ from weaviate_provider.operators.weaviate import (
     WeaviateCreateSchemaOperator,
 )
 from weaviate_provider.hooks.weaviate import WeaviateHook
+from airflow.models.param import Param
+from include.movie_data.text_to_parquet_script import create_parquet_file_from_txt
 from airflow.operators.empty import EmptyOperator
 from airflow.models.baseoperator import chain
 import json
-from airflow.models.param import Param
-from include.movie_data.text_to_parquet_script import create_parquet_file_from_txt
+
 
 WEAVIATE_USER_CONN_ID = "weaviate_user"
 WEAVIATE_ADMIN_CONN_ID = "weaviate_admin"
 PARQUET_FILE_PATH = "include/movie_data/movie_data.parquet"
 TEXT_FILE_PATH = "include/movie_data/movie_data.txt"
+SCHEMA_FILE_PATH = "include/movie_data/movie_schema.json"
 
 
 @dag(
@@ -25,19 +27,30 @@ TEXT_FILE_PATH = "include/movie_data/movie_data.txt"
     tags=["weaviate"],
     params={
         "movie_concepts": Param(
-            ["discovery", "friends"],
+            ["innovation", "ensemble"],
             type="array",
-            description="What kind of movie do you want to watch today? Add one concept per line.",
-        )
+            description=(
+                "What kind of movie do you want to watch today?"
+                + "Add one concept per line."
+            ),
+        ),
+        "certainty_threshold_percent": Param(
+            50,
+            type="integer",
+            description=(
+                "How close should the movie at least be to your concepts? "
+                + "100% means identical vectors, 0% means no similarity."
+            ),
+        ),
     },
 )
-def weaviate_tutorial():
+def query_movie_vectors():
     # check if the movie schema exists in the weaviate instance
     # the operator returns True if the schema exists, False otherwise
     check_schema = WeaviateCheckSchemaOperator(
         task_id="check_schema",
         weaviate_conn_id=WEAVIATE_USER_CONN_ID,
-        class_object_data=Path("include/movie_data/weaviate_schema.json").read_text(),
+        class_object_data=Path(SCHEMA_FILE_PATH).read_text(),
     )
 
     # decide if the movie schema should be created
@@ -48,7 +61,6 @@ def weaviate_tutorial():
         doesn't exist we can use a branch operator to conditionally create
         it.
         """
-        WeaviateHook("weaviate_admin").get_conn().schema.delete_all()
         if schema_exists:
             return "schema_exists"
         else:
@@ -57,7 +69,7 @@ def weaviate_tutorial():
     create_schema = WeaviateCreateSchemaOperator(
         task_id="create_schema",
         weaviate_conn_id=WEAVIATE_ADMIN_CONN_ID,
-        class_object_data="file://include/movie_data/weaviate_schema.json",
+        class_object_data=f"file://{SCHEMA_FILE_PATH}",
     )
 
     schema_exists = EmptyOperator(task_id="schema_exists")
@@ -70,6 +82,7 @@ def weaviate_tutorial():
         weaviate_conn_id=WEAVIATE_ADMIN_CONN_ID, trigger_rule="none_failed"
     )
     def import_data(class_name):
+        """Import the movie data into Weaviate using automatic weaviate embeddings."""
         import pandas as pd
 
         df = pd.read_parquet(PARQUET_FILE_PATH)
@@ -84,8 +97,10 @@ def weaviate_tutorial():
 
     @task
     def query_embeddings(weaviate_conn_id, **context):
+        """Query the Weaviate instance for the movie that is closest to the given concepts."""
         hook = WeaviateHook(weaviate_conn_id)
         movie_concepts = context["params"]["movie_concepts"]
+        certainty_threshold = context["params"]["certainty_threshold_percent"] / 100
 
         query = (
             """
@@ -95,7 +110,9 @@ def weaviate_tutorial():
                         concepts: """
             + json.dumps(movie_concepts)
             + """,
-                        distance: 0.75
+                        certainty: """
+            + json.dumps(certainty_threshold)
+            + """
                     }) {
                         title
                         year
@@ -111,10 +128,19 @@ def weaviate_tutorial():
         )
 
         response = hook.run(query=query)
-        top_result = response["data"]["Get"]["Movie"][0]
-        print(f"The top result for the concept(s) {movie_concepts} is:")
-        print(f"The movie {top_result['title']}, released in {top_result['year']}.")
-        print(f"IMDB describes the movie as: {top_result['description']}")
+        if len(response["data"]["Get"]["Movie"]):
+            top_result = response["data"]["Get"]["Movie"][0]
+            print(f"The top result for the concept(s) {movie_concepts} is:")
+            print(f"The movie {top_result['title']}, released in {top_result['year']}.")
+            print(f"IMDB describes the movie as: {top_result['description']}")
+            print(
+                f"The certainty of the result is {round(top_result['_additional']['certainty'],3)}."
+            )
+        else:
+            print(
+                f"No movie found for the given concept(s) {movie_concepts}"
+                + f"with a certainty threshold of {certainty_threshold}. Try again!"
+            )
 
     chain(
         branch_create_schema(check_schema.output),
@@ -126,4 +152,4 @@ def weaviate_tutorial():
     chain(create_parquet_file(TEXT_FILE_PATH, PARQUET_FILE_PATH), import_data_obj)
 
 
-weaviate_tutorial()
+query_movie_vectors()
