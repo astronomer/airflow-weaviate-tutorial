@@ -1,0 +1,27 @@
+version: '3.1'
+services:           
+  weaviate:
+    image: semitechnologies/weaviate:latest
+    command: "--host 0.0.0.0 --port '8081' --scheme http"
+    ports:
+    - 8081:8081
+    environment:
+      QUERY_DEFAULTS_LIMIT: 25
+      PERSISTENCE_DATA_PATH: '/var/lib/weaviate'
+      DEFAULT_VECTORIZER_MODULE: 'text2vec-transformers'
+      ENABLE_MODULES: 'text2vec-transformers'
+      CLUSTER_HOSTNAME: 'node1'
+      AUTHENTICATION_APIKEY_ENABLED: 'true'
+      AUTHENTICATION_APIKEY_ALLOWED_KEYS: 'readonlykey,adminkey'
+      AUTHENTICATION_APIKEY_USERS: 'jane@doe.com,john@doe.com'
+      TRANSFORMERS_INFERENCE_API: 'http://t2v-transformers:8080'
+    networks:
+      - airflow
+  t2v-transformers:
+    image: semitechnologies/transformers-inference:sentence-transformers-multi-qa-MiniLM-L6-cos-v1
+    environment:
+      ENABLE_CUDA: 0 # set to 1 to enable
+    ports:
+      - 8082:8080
+    networks:
+      - airflow
