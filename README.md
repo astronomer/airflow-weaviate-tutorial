@@ -1,49 +1,33 @@
-Overview
-========
+Predict possum tail length using linear regression with MLflow and Airflow
+==========================================================================
 
-Welcome to Astronomer! This project was generated after you ran 'astro dev init' using the Astronomer CLI. This readme describes the contents of the project, as well as how to run Apache Airflow on your local machine.
+This repository contains the DAG code used in the [Orchestrate Weaviate operations with Apache Airflow tutorial](https://docs.astronomer.io/learn/airflow-weaviate). 
 
-Project Contents
-================
+The DAG in this repository uses the following package:
 
-Your Astro project contains the following files and folders:
+- Airflow Weaviate provider beta version. [Whl file](https://github.com/astronomer/learn-tutorials-data/blob/main/wheel_files/airflow_provider_weaviate-0.0.1-py3-none-any.whl).
 
-- dags: This folder contains the Python files for your Airflow DAGs. By default, this directory includes two example DAGs:
-    - `example_dag_basic`: This DAG shows a simple ETL data pipeline example with three TaskFlow API tasks that run daily.
-    - `example_dag_advanced`: This advanced DAG showcases a variety of Airflow features like branching, Jinja templates, task groups and several Airflow operators.
-- Dockerfile: This file contains a versioned Astro Runtime Docker image that provides a differentiated Airflow experience. If you want to execute other commands or overrides at runtime, specify them here.
-- include: This folder contains any additional files that you want to include as part of your project. It is empty by default.
-- packages.txt: Install OS-level packages needed for your project by adding them to this file. It is empty by default.
-- requirements.txt: Install Python packages needed for your project by adding them to this file. It is empty by default.
-- plugins: Add custom or community plugins for your project to this file. It is empty by default.
-- airflow_settings.yaml: Use this local-only file to specify Airflow Connections, Variables, and Pools instead of entering them in the Airflow UI as you develop DAGs in this project.
+# How to use this repository
 
-Deploy Your Project Locally
-===========================
+This section explains how to run this repository with Airflow. Note that you will need to copy the contents of the `.env_example` file to a newly created `.env` file. No external connections are necessary to run this repository locally, but you can add your own credentials in the file if you wish to connect to your tools. 
 
-1. Start Airflow on your local machine by running 'astro dev start'.
+Download the [Astro CLI](https://docs.astronomer.io/astro/cli/install-cli) to run Airflow locally in Docker. `astro` is the only package you will need to install locally.
 
-This command will spin up 4 Docker containers on your machine, each for a different Airflow component:
+1. Run `git clone https://github.com/astronomer/use-case-mlflow.git` on your computer to create a local clone of this repository.
+2. Install the Astro CLI by following the steps in the [Astro CLI documentation](https://docs.astronomer.io/astro/cli/install-cli). Docker Desktop/Docker Engine is a prerequisite, but you don't need in-depth Docker knowledge to run Airflow with the Astro CLI.
+3. Run `astro dev start` in your cloned repository.
+4. After your Astro project has started. View the Airflow UI at `localhost:8080`.
 
-- Postgres: Airflow's Metadata Database
-- Webserver: The Airflow component responsible for rendering the Airflow UI
-- Scheduler: The Airflow component responsible for monitoring and triggering tasks
-- Triggerer: The Airflow component responsible for triggering deferred tasks
+In this project `astro dev start` spins up 6 Docker containers:
 
-2. Verify that all 4 Docker containers were created by running 'docker ps'.
+- The Airflow webserver, which runs the Airflow UI and can be accessed at `https://localhost:8080/`.
+- The Airflow scheduler, which is responsible for monitoring and triggering tasks.
+- The Airflow triggerer, which is an Airflow component used to run deferrable operators.
+- The Airflow metadata database, which is a Postgres database that runs on port 5432.
+- A local Weaviate instance, which can be accessed at `http://localhost:8081/v1`.
+- A local t2v-transformers instance, which can be accessed at `http://localhost:8082/`.
 
-Note: Running 'astro dev start' will start your project with the Airflow Webserver exposed at port 8080 and Postgres exposed at port 5432. If you already have either of those ports allocated, you can either [stop your existing Docker containers or change the port](https://docs.astronomer.io/astro/test-and-troubleshoot-locally#ports-are-not-available).
+## Resources
 
-3. Access the Airflow UI for your local Airflow project. To do so, go to http://localhost:8080/ and log in with 'admin' for both your Username and Password.
-
-You should also be able to access your Postgres Database at 'localhost:5432/postgres'.
-
-Deploy Your Project to Astronomer
-=================================
-
-If you have an Astronomer account, pushing code to a Deployment on Astronomer is simple. For deploying instructions, refer to Astronomer documentation: https://docs.astronomer.io/cloud/deploy-code/
-
-Contact
-=======
-
-The Astronomer CLI is maintained with love by the Astronomer team. To report a bug or suggest a change, reach out to our support.
+- [Orchestrate Weaviate operations with Apache Airflow](https://docs.astronomer.io/learn/airflow-weaviate).
+- [Weaviate documentation](https://weaviate.io/developers/weaviate).
