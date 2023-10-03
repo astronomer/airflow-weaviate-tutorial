@@ -1,5 +1,5 @@
-Predict possum tail length using linear regression with MLflow and Airflow
-==========================================================================
+Orchestrate Weaviate operations with Apache Airflow
+===================================================
 
 This repository contains the DAG code used in the [Orchestrate Weaviate operations with Apache Airflow tutorial](https://docs.astronomer.io/learn/airflow-weaviate). 
 
