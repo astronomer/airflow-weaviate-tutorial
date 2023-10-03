@@ -1,0 +1,2 @@
+# Astro Runtime includes the following pre-installed providers packages: https://docs.astronomer.io/astro/runtime-image-architecture#provider-packages
+/include/airflow_provider_weaviate-0.0.1-py3-none-any.whl
