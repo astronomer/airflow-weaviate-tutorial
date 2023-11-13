@@ -5,11 +5,13 @@ This repository contains the DAG code used in the [Orchestrate Weaviate operatio
 
 The DAG in this repository uses the following package:
 
-- Airflow Weaviate provider beta version. [Whl file](https://github.com/astronomer/learn-tutorials-data/blob/main/wheel_files/airflow_provider_weaviate-0.0.1-py3-none-any.whl).
+- [Airflow Weaviate provider](https://airflow.apache.org/docs/apache-airflow-providers-weaviate/stable/index.html). 
 
 # How to use this repository
 
 This section explains how to run this repository with Airflow. Note that you will need to copy the contents of the `.env_example` file to a newly created `.env` file. No external connections are necessary to run this repository locally, but you can add your own credentials in the file if you wish to connect to your tools. 
+
+If you want to use the `text2vec-openai` vectorizer you will need to provide an [OpenAI API key of at least tier 1](https://platform.openai.com/docs/guides/rate-limits/usage-tiers?context=tier-free) to the `X-OpenAI-Api-Key` parameter in the `AIRFLOW_CONN_WEAVIATE_DEFAULT` connection.
 
 Download the [Astro CLI](https://docs.astronomer.io/astro/cli/install-cli) to run Airflow locally in Docker. `astro` is the only package you will need to install locally.
 
@@ -30,4 +32,5 @@ In this project `astro dev start` spins up 6 Docker containers:
 ## Resources
 
 - [Orchestrate Weaviate operations with Apache Airflow](https://docs.astronomer.io/learn/airflow-weaviate).
+- [Airflow Weaviate provider documentation](https://airflow.apache.org/docs/apache-airflow-providers-weaviate/stable/index.html).
 - [Weaviate documentation](https://weaviate.io/developers/weaviate).
