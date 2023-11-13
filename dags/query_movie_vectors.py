@@ -19,7 +19,7 @@ import re
 
 WEAVIATE_USER_CONN_ID = "weaviate_default"
 TEXT_FILE_PATH = "include/movie_data.txt"
-CLASS_NAME = "Movie"
+CLASS_NAME_BASE = "Movie"
 
 # set the vectorizer to text2vec-openai if you want to use the openai model
 # note that using the OpenAI vectorizer requires a valid API key in the
@@ -30,6 +30,8 @@ CLASS_NAME = "Movie"
 # for example in the docker-compose.override.yml file
 VECTORIZER = "text2vec-transformers"
 
+# the class name is a combination of the base class name and the vectorizer
+CLASS_NAME = CLASS_NAME_BASE + "_" + VECTORIZER.replace("-", "_")
 
 @dag(
     start_date=datetime(2023, 9, 1),
@@ -38,7 +40,7 @@ VECTORIZER = "text2vec-transformers"
     tags=["weaviate"],
     params={
         "movie_concepts": Param(
-            ["innovation", "ensemble"],
+            ["innovation", "friends"],
             type="array",
             description=(
                 "What kind of movie do you want to watch today?"
