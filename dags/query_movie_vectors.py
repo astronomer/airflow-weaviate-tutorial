@@ -19,6 +19,8 @@ import re
 
 WEAVIATE_USER_CONN_ID = "weaviate_default"
 TEXT_FILE_PATH = "include/movie_data.txt"
+# the base class name is used to create a unique class name for the vectorizer
+# note that it is best practice to capitalize the first letter of the class name
 CLASS_NAME_BASE = "Movie"
 
 # set the vectorizer to text2vec-openai if you want to use the openai model
@@ -32,6 +34,7 @@ VECTORIZER = "text2vec-transformers"
 
 # the class name is a combination of the base class name and the vectorizer
 CLASS_NAME = CLASS_NAME_BASE + "_" + VECTORIZER.replace("-", "_")
+
 
 @dag(
     start_date=datetime(2023, 9, 1),
