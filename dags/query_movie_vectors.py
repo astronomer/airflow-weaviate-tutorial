@@ -14,7 +14,6 @@ from airflow.providers.weaviate.hooks.weaviate import WeaviateHook
 from airflow.providers.weaviate.operators.weaviate import WeaviateIngestOperator
 from weaviate.util import generate_uuid5
 import weaviate.classes.config as wvcc
-from weaviate.classes.config import Property, DataType
 from pendulum import datetime
 import logging
 import re
