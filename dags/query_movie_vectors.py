@@ -75,10 +75,7 @@ def query_movie_vectors():
         "Create a collection with the provided name and vectorizer."
         hook = WeaviateHook(conn_id)
 
-        hook.create_collection(
-            name=collection_name,
-            vectorizer_config=vectorizer
-        )
+        hook.create_collection(name=collection_name, vectorizer_config=vectorizer)
 
     collection_exists = EmptyOperator(task_id="collection_exists")
 
