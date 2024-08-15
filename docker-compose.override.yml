@@ -1,19 +1,23 @@
 version: '3.1'
 services:           
   weaviate:
-    image: semitechnologies/weaviate:latest
+    image: cr.weaviate.io/semitechnologies/weaviate:1.25.6
     command: "--host 0.0.0.0 --port '8081' --scheme http"
     ports:
-      - 8081:8081
+      - "8081:8081"
+      - "50051:50051"
+    volumes:
+      - ./include/weaviate/backup:/var/lib/weaviate/backup
     environment:
       QUERY_DEFAULTS_LIMIT: 25
-      PERSISTENCE_DATA_PATH: '/var/lib/weaviate'
-      DEFAULT_VECTORIZER_MODULE: 'text2vec-transformers'
-      ENABLE_MODULES: 'text2vec-transformers, text2vec-openai'
-      CLUSTER_HOSTNAME: 'node1'
       AUTHENTICATION_APIKEY_ENABLED: 'true'
       AUTHENTICATION_APIKEY_ALLOWED_KEYS: 'readonlykey,adminkey'
       AUTHENTICATION_APIKEY_USERS: 'jane@doe.com,john@doe.com'
+      PERSISTENCE_DATA_PATH: '/var/lib/weaviate'
+      DEFAULT_VECTORIZER_MODULE: 'text2vec-openai'
+      ENABLE_MODULES: 'text2vec-openai, backup-filesystem, qna-openai, text2vec-transformers'
+      BACKUP_FILESYSTEM_PATH: '/var/lib/weaviate/backup'
+      CLUSTER_HOSTNAME: 'node1'
       TRANSFORMERS_INFERENCE_API: 'http://t2v-transformers:8080'
     networks:
       - airflow

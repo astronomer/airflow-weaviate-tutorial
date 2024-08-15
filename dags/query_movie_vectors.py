@@ -13,6 +13,8 @@ from airflow.models.baseoperator import chain
 from airflow.providers.weaviate.hooks.weaviate import WeaviateHook
 from airflow.providers.weaviate.operators.weaviate import WeaviateIngestOperator
 from weaviate.util import generate_uuid5
+import weaviate.classes.config as wvcc
+from weaviate.classes.config import Property, DataType
 from pendulum import datetime
 import logging
 import re
@@ -23,7 +25,7 @@ WEAVIATE_USER_CONN_ID = "weaviate_default"
 TEXT_FILE_PATH = "include/movie_data.txt"
 # the base collection name is used to create a unique collection name for the vectorizer
 # note that it is best practice to capitalize the first letter of the collection name
-COLLECTION_NAME_BASE = "Movie"
+COLLECTION_NAME = "MovieG"
 
 # set the vectorizer to text2vec-openai if you want to use the openai model
 # note that using the OpenAI vectorizer requires a valid API key in the
@@ -32,10 +34,8 @@ COLLECTION_NAME_BASE = "Movie"
 # (https://weaviate.io/developers/weaviate/modules/retriever-vectorizer-modules)
 # make sure to also add it to the weaviate configuration's `ENABLE_MODULES` list
 # for example in the docker-compose.override.yml file
-VECTORIZER = "text2vec-transformers"
-
-# the collection name is a combination of the base collection name and the vectorizer
-COLLECTION_NAME = COLLECTION_NAME_BASE + "_" + VECTORIZER.replace("-", "_")
+VECTORIZER = wvcc.Configure.Vectorizer.text2vec_transformers()
+# VECTORIZER = wvcc.Configure.Vectorizer.text2vec_openai(model="ada")
 
 
 @dag(
@@ -78,6 +78,7 @@ def query_movie_vectors():
 
         hook.create_collection(
             name=collection_name,
+            vectorizer_config=vectorizer
         )
 
     collection_exists = EmptyOperator(task_id="collection_exists")
@@ -152,7 +153,9 @@ def query_movie_vectors():
         movie_description = movie.objects[0].properties["description"]
 
         t_log.info(f"You should watch {movie_title}!")
-        t_log.info(f"It was filmed in {movie_year} and belongs to the {movie_genre} genre.")
+        t_log.info(
+            f"It was filmed in {movie_year} and belongs to the {movie_genre} genre."
+        )
         t_log.info(f"Description: {movie_description}")
 
     chain(
