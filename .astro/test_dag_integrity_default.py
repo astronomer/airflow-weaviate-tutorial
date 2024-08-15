@@ -56,7 +56,7 @@ os.getenv = os_getenv_monkeypatch
 # =========== MONKEYPATCH VARIABLE.GET() ===========
 
 
-class magic_dict(dict):
+collection magic_dict(dict):
     def __init__(self, *args, **kwargs):
         self.update(*args, **kwargs)
 
